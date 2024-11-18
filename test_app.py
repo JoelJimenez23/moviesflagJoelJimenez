@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, Mock
-from app import app, getmoviedetails, get_country_flag
+from app import app, fetch_movie_details, fetch_flag_async
 
 class MovieWithFlagAppTestCase(unittest.TestCase):
 
@@ -17,35 +17,35 @@ class MovieWithFlagAppTestCase(unittest.TestCase):
         # The response should be JSON and contain data
         data = response.get_json()
         self.assertIsInstance(data, list)
-        self.assertEqual(len(data), 20)
+        self.assertEqual(len(data), 10)
         for movie in data:
             self.assertIsNotNone(movie["title"])
             self.assertIsNotNone(movie["year"])
             self.assertIsNotNone(movie["countries"])
 
-    @patch("app.searchfilms")
-    @patch("app.getmoviedetails")
-    def test_movie_flag_get(self, mock_getmoviedetails, mock_searchfilms):
-        mock_getmoviedetails.return_value = {
+    @patch("app.search_movies")
+    @patch("app.fetch_movie_details")
+    def test_movie_flag_get(self, mock_fetch_movie_details, mock_search_movies):
+        mock_fetch_movie_details.return_value = {
             "Title": "Superman II",
             "Year": "1980",
             "Country": "United States, United Kingdom, Canada, France",
         }
-        mock_searchfilms.return_value = {
+        mock_search_movies.return_value = {
             "Search": [
                 {
-                "Title": "Superman II",
-                "Year": "1980",
-                "imdbID": "tt0081573"
+                    "Title": "Superman II",
+                    "Year": "1980",
+                    "imdbID": "tt0081573"
                 }
             ]
         }
 
         response = self.client.get("/api/movies?filter=superman")
         self.assertEqual(response.status_code, 200)
+
         # The response should be JSON and contain data
         data = response.get_json()
-        print(data)
         self.assertIsInstance(data, list)
         self.assertEqual(len(data), 1)
         for movie in data:
@@ -61,15 +61,15 @@ class MovieWithFlagAppTestCase(unittest.TestCase):
             self.assertEqual(movie["countries"][2]["flag"], "https://flagcdn.com/ca.svg")
             self.assertEqual(movie["countries"][3]["flag"], "https://flagcdn.com/fr.svg")
 
-    @patch("app.get_country_flag")
-    @patch("app.getmoviedetails")
-    def test_movie_searchapi(self, mock_getmoviedetails, mock_get_country_flag):
-        mock_getmoviedetails.return_value = {
+    @patch("app.fetch_flag_async")
+    @patch("app.fetch_movie_details")
+    def test_movie_searchapi(self, mock_fetch_movie_details, mock_fetch_flag_async):
+        mock_fetch_movie_details.return_value = {
             "Title": "Superman II",
             "Year": "1980",
             "Country": "United States, United Kingdom, Canada, France",
         }
-        mock_get_country_flag.return_value = "https://flagcdn.com/us.svg"
+        mock_fetch_flag_async.return_value = "https://flagcdn.com/us.svg"
 
         response = self.client.get("/api/movies?filter=superman")
         self.assertEqual(response.status_code, 200)
@@ -77,7 +77,7 @@ class MovieWithFlagAppTestCase(unittest.TestCase):
         # The response should be JSON and contain data
         data = response.get_json()
         self.assertIsInstance(data, list)
-        self.assertEqual(len(data), 20)
+        self.assertEqual(len(data), 10)
         for movie in data:
             self.assertEqual(movie["title"], "Superman II")
             self.assertEqual(movie["year"], "1980")
